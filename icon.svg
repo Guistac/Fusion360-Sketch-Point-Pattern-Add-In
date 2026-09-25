@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- DOTTED DISTRIBUTION PATH / VECTOR -->
+  <path d="M 20 44 L 40 28 L 52 12" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="2.5" 
+        stroke-dasharray="3.5,2.5" 
+        stroke-linecap="round" />
+
+  <!-- PATTERN INSTANCE 2 (Top Right - Hard bounds X:[40..64], Y:[0..24]) -->
+  <g>
+    <!-- Top Face (Sunlit) -->
+    <polygon points="52,0 64,6 52,12 40,6" fill="#99D9FF" />
+    <!-- Left Face (Midtone) -->
+    <polygon points="40,6 52,12 52,24 40,18" fill="#70C5FF" />
+    <!-- Right Face (Shadow - Touches X=64) -->
+    <polygon points="52,12 64,6 64,18 52,24" fill="#3BA3EC" />
+  </g>
+
+  <!-- SKETCH POINT 2 -->
+  <circle cx="52" cy="12" r="4.5" fill="#E6332A" stroke="#2C3238" stroke-width="1.5" />
+  <circle cx="52" cy="12" r="1.5" fill="#FFFFFF" />
+
+  <!-- PATTERN INSTANCE 1 (Mid Instance - X:[28..52], Y:[16..40]) -->
+  <g>
+    <!-- Top Face (Sunlit) -->
+    <polygon points="40,16 52,22 40,28 28,22" fill="#99D9FF" />
+    <!-- Left Face (Midtone) -->
+    <polygon points="28,22 40,28 40,40 28,34" fill="#70C5FF" />
+    <!-- Right Face (Shadow) -->
+    <polygon points="40,28 52,22 52,34 40,40" fill="#3BA3EC" />
+  </g>
+
+  <!-- SKETCH POINT 1 -->
+  <circle cx="40" cy="28" r="4.5" fill="#E6332A" stroke="#2C3238" stroke-width="1.5" />
+  <circle cx="40" cy="28" r="1.5" fill="#FFFFFF" />
+
+  <!-- PRIMARY SOURCE SOLID CUBE (Bottom Left - Hard bounds X:[0..40], Y:[20..64]) -->
+  <g>
+    <!-- Top Face (Sunlit) -->
+    <polygon points="20,20 40,31 20,42 0,31" fill="#99D9FF" />
+    <!-- Left Face (Midtone - Touches X=0 and Y=64) -->
+    <polygon points="0,31 20,42 20,64 0,53" fill="#70C5FF" />
+    <!-- Right Face (Shadow - Touches Y=64) -->
+    <polygon points="20,42 40,31 40,53 20,64" fill="#3BA3EC" />
+  </g>
+
+  <!-- ANCHOR ORIGIN SKETCH POINT -->
+  <circle cx="20" cy="44" r="5.5" fill="#E6332A" stroke="#2C3238" stroke-width="2" />
+  <circle cx="20" cy="44" r="2" fill="#FFFFFF" />
+</svg>

@@ -1,0 +1,10 @@
+{
+    "autodeskProduct": "Fusion",
+    "type": "addin",
+    "id": "e83b4b21-4f11-477a-9a99-b1d7d0a92026",
+    "author": "Leo Becker",
+    "description": "Parametric sketch-point driven pattern custom feature",
+    "version": "1.0.0",
+    "supportedOS": "windows|mac",
+    "editEnabled": true
+}
