@@ -289,6 +289,39 @@ def execute_brep_pattern(source_body, anchor_pt, pattern_sketch, merge_instances
     return True
 
 
+def roll_timeline_to_feature(feat, is_before=False):
+    """Rolls the timeline marker to a specific feature (used only during active UI editing)."""
+    try:
+        if not feat or not feat.isValid:
+            return
+        tl_obj = feat.timelineObject
+        if tl_obj:
+            tl_obj.rollTo(is_before)
+    except Exception as e:
+        log_msg(f"Roll to feature failed: {e}")
+
+
+def roll_timeline_to_end():
+    """Rolls the timeline marker to the very end of the design history (used after UI editing)."""
+    try:
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        if not design or not design.timeline:
+            return
+        tl = design.timeline
+        if hasattr(tl, 'moveToEnd'):
+            try:
+                tl.moveToEnd()
+                return
+            except Exception:
+                pass
+        if tl.count > 0:
+            last_item = tl.item(tl.count - 1)
+            if last_item:
+                last_item.rollTo(False)
+    except Exception as e:
+        log_msg(f"Roll to end failed: {e}")
+
+
 def check_and_update_all_patterns():
     """Scans all pattern BaseFeatures in the active design and updates out-of-date geometry."""
     global IS_UPDATING
@@ -296,8 +329,10 @@ def check_and_update_all_patterns():
         return
 
     try:
+        if not app.activeDocument or not app.activeDocument.isValid:
+            return
         design = adsk.fusion.Design.cast(app.activeProduct)
-        if not design:
+        if not design or not design.rootComponent:
             return
 
         for comp in design.allComponents:
@@ -374,6 +409,15 @@ def check_and_update_all_patterns():
                         success = execute_brep_pattern(source_body, anchor_pt, pattern_sketch, merge_instances, feat)
                         if success:
                             feat.attributes.add(ATTR_GROUP, 'geometry_hash', current_hash)
+                            feat.attributes.add(ATTR_GROUP, 'source_token', source_body.entityToken)
+                            feat.attributes.add(ATTR_GROUP, 'sketch_token', pattern_sketch.entityToken)
+                            if anchor_entity:
+                                feat.attributes.add(ATTR_GROUP, 'anchor_token', anchor_entity.entityToken)
+                                a_pt = get_point_coords(anchor_entity)
+                                if a_pt:
+                                    feat.attributes.add(ATTR_GROUP, 'anchor_x', str(a_pt.x))
+                                    feat.attributes.add(ATTR_GROUP, 'anchor_y', str(a_pt.y))
+                                    feat.attributes.add(ATTR_GROUP, 'anchor_z', str(a_pt.z))
                             pt_count = len(get_target_sketch_points(pattern_sketch))
                             feat.name = f'Sketch Pattern ({pt_count} pts)'
                     finally:
@@ -394,9 +438,12 @@ class CommandTerminatedHandler(adsk.core.ApplicationCommandEventHandler):
         if cmd_id == CMD_ID:
             return
 
-        # Instead of guessing every command that modifies geometry, 
-        # ignore known high-frequency view/selection commands.
-        ignore_cmds = ['SelectCommand', 'PanCommand', 'ZoomCommand', 'OrbitCommand', 'LookAtCommand']
+        # Ignore view/selection, compute, and document lifecycle events to prevent interference during project load/save
+        ignore_cmds = [
+            'SelectCommand', 'PanCommand', 'ZoomCommand', 'OrbitCommand', 'LookAtCommand',
+            'DocumentOpenCommand', 'FileOpenCommand', 'ApplicationActivateDocumentCommand',
+            'FusionDocActivated', 'SaveCommand', 'SaveAsCommand', 'DocumentSaveCommand', 'CloseCommand'
+        ]
         
         if cmd_id not in ignore_cmds:
             check_and_update_all_patterns()
@@ -493,6 +540,9 @@ class CommandExecuteHandler(adsk.core.CommandEventHandler):
             if not keep_source:
                 source_body.isLightBulbOn = False
 
+            # Restore timeline marker to the end so downstream operations update
+            roll_timeline_to_end()
+
         except Exception:
             if ui:
                 ui.messageBox(f'Execution Failed:\n{traceback.format_exc()}')
@@ -505,6 +555,8 @@ class CommandDestroyHandler(adsk.core.CommandEventHandler):
     def notify(self, args: adsk.core.CommandEventArgs):
         global TARGET_BASE_FEAT
         TARGET_BASE_FEAT = None
+        # Ensure timeline marker returns to the end if dialog was cancelled
+        roll_timeline_to_end()
 
 
 class CommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
@@ -528,6 +580,10 @@ class CommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
                         if cand:
                             TARGET_BASE_FEAT = cand
                             break
+
+            # If editing an existing BaseFeature, ensure timeline is rolled to it for selection scope
+            if TARGET_BASE_FEAT and TARGET_BASE_FEAT.isValid:
+                roll_timeline_to_feature(TARGET_BASE_FEAT, False)
 
             source_sel = inputs.addSelectionInput('source_body', 'Source Body', 'Select body to pattern')
             source_sel.addSelectionFilter(adsk.core.SelectionCommandInput.SolidBodies)
@@ -638,6 +694,8 @@ class CommandStartingHandler(adsk.core.ApplicationCommandEventHandler):
             # Check if the feature they are trying to edit has our Add-in's metadata
             if candidate:
                 TARGET_BASE_FEAT = candidate
+                # Roll timeline to this feature so upstream bodies exist and are selectable
+                roll_timeline_to_feature(candidate, False)
                 # 1. Cancel Fusion's native BaseFeature editing environment
                 args.isCanceled = True 
                 
