@@ -27,11 +27,13 @@ Autodesk Fusion 360 natively supports Rectangular and Circular patterns, but lac
 
 ## Key Features
 
-- **Arbitrary Point Distribution:** Pattern solid bodies across any arrangement of sketch points, construction points, or vertices.
+- **Arbitrary Point Distribution:** Pattern solid bodies across any arrangement of user-created sketch points, projected points, construction points, or vertices.
+- **Smart Origin Filtering:** Automatically distinguishes and excludes the sketch's built-in reference origin so instances are only placed where intended (while still allowing explicit user points placed at the origin).
+- **Active Component Context:** Places the resulting BaseFeature and bodies directly into the active component rather than defaulting to the root component, keeping assembly timelines organized.
 - **Blazing Fast (<50ms for 100+ instances):** Uses `TemporaryBRepManager` to perform transformations directly in memory, eliminating timeline bloat and UI freezes.
-- **Reactive Parametric Updates:** Automatically detects modifications to target sketch point positions or source body dimensions via an MD5 geometric state hash and recomputes out-of-date geometry.
+- **Reactive Parametric Updates:** Automatically detects modifications to target sketch point positions or source body dimensions via an MD5 geometric state hash and recomputes out-of-date geometry across all components.
 - **Self-Healing Topology Architecture:** Implements name fallbacks and coordinate decoupling so that patterns do not break when Fusion rebuilds entity tokens during upstream edits.
-- **Seamless Timeline Editing:** Double-clicking or editing the pattern node in the timeline automatically re-opens the custom command dialog with existing selections pre-populated.
+- **Seamless Timeline Editing:** Double-clicking or editing the pattern node in the timeline automatically re-opens the custom command dialog with existing selections pre-populated, with full assembly proxy support.
 - **Optional Boolean Union:** Combine all generated instances into a single unified body or keep them as distinct solid bodies.
 
 ---
@@ -112,7 +114,9 @@ git clone https://github.com/your-username/SketchPointPattern.git
 | Architecture Component | Implementation Strategy |
 | :--- | :--- |
 | **Geometry Computation** | Uses `adsk.fusion.TemporaryBRepManager` in RAM to avoid creating dozens of discrete timeline operations. |
-| **Reactive Evaluation** | Hooks into `ui.commandTerminated` with high-frequency command filtering (ignoring pan/zoom/orbit). |
+| **Reactive Evaluation** | Hooks into `ui.commandTerminated` with high-frequency command filtering (ignoring pan/zoom/orbit) across all components. |
+| **Origin Filtering** | Employs multi-tier identity and coordinate filtering to skip internal sketch origin points while supporting explicit user-placed points. |
+| **Component Context** | Respects `activeComponent` hierarchy to keep timeline features and generated bodies properly encapsulated. |
 | **State Tracking** | Computes an MD5 checksum combining sketch coordinate tuples, source volume, and bounding box limits. |
 | **Self-Healing Fallbacks** | Serializes both entity tokens and entity names to survive upstream token destruction. |
 
